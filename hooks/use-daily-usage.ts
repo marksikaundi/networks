@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AppState, Platform } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AppState, Platform } from "react-native";
 
 import {
   isModuleAvailable,
@@ -8,7 +8,7 @@ import {
   queryDeviceUsage,
   type AppUsage,
   type NetworkTotals,
-} from '@local/network-monitor';
+} from "@local/network-monitor";
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -34,7 +34,7 @@ export function useDailyUsage() {
   const [topApps, setTopApps] = useState<AppUsage[]>([]);
   const [hourlyTotals, setHourlyTotals] = useState<number[]>([]);
   const [hasAccess, setHasAccess] = useState(false);
-  const isAndroid = Platform.OS === 'android';
+  const isAndroid = Platform.OS === "android";
   const moduleAvailable = isModuleAvailable();
 
   const refreshAccess = useCallback(() => {
@@ -51,8 +51,8 @@ export function useDailyUsage() {
       return;
     }
 
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
         refreshAccess();
       }
     });
@@ -76,10 +76,10 @@ export function useDailyUsage() {
 
       try {
         const [totalData, wifiData, mobileData, appData] = await Promise.all([
-          queryDeviceUsage(start, end, 'all'),
-          queryDeviceUsage(start, end, 'wifi'),
-          queryDeviceUsage(start, end, 'mobile'),
-          queryAppUsage(start, end, 'all'),
+          queryDeviceUsage(start, end, "all"),
+          queryDeviceUsage(start, end, "wifi"),
+          queryDeviceUsage(start, end, "mobile"),
+          queryAppUsage(start, end, "all"),
         ]);
 
         if (!mounted) {
@@ -103,7 +103,7 @@ export function useDailyUsage() {
         const bucketEnd = end - i * HOUR_MS;
         const bucketStart = bucketEnd - HOUR_MS;
         try {
-          const hourly = await queryDeviceUsage(bucketStart, bucketEnd, 'all');
+          const hourly = await queryDeviceUsage(bucketStart, bucketEnd, "all");
           buckets.push(hourly.rxBytes + hourly.txBytes);
         } catch {
           buckets.push(0);
@@ -116,7 +116,7 @@ export function useDailyUsage() {
     };
 
     refresh();
-    const interval = setInterval(refresh, 5 * 60 * 1000);
+    const interval = setInterval(refresh, 30 * 1000);
     return () => {
       mounted = false;
       clearInterval(interval);
@@ -133,6 +133,15 @@ export function useDailyUsage() {
       hasAccess,
       isLiveModule: moduleAvailable && isAndroid,
     }),
-    [hasAccess, hourlyTotals, isAndroid, mobile, moduleAvailable, topApps, totals, wifi]
+    [
+      hasAccess,
+      hourlyTotals,
+      isAndroid,
+      mobile,
+      moduleAvailable,
+      topApps,
+      totals,
+      wifi,
+    ],
   );
 }

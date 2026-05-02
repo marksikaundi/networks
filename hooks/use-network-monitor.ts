@@ -1,6 +1,13 @@
-import { type ComponentProps, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Platform } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+} from "react";
+import { AppState, Platform } from "react-native";
 
 import {
   getTrafficTotals,
@@ -8,9 +15,9 @@ import {
   isUsageAccessGranted,
   queryAppUsage,
   type AppUsage,
-} from '@local/network-monitor';
+} from "@local/network-monitor";
 
-type IconName = ComponentProps<typeof MaterialIcons>['name'];
+type IconName = ComponentProps<typeof MaterialIcons>["name"];
 
 export type MonitorAppRow = {
   id: string;
@@ -32,33 +39,33 @@ export type MonitorSpeed = {
 };
 
 const APP_WINDOW_MS = 5 * 60 * 1000;
-const SPEED_INTERVAL_MS = 1500;
-const APP_REFRESH_MS = 6000;
+const SPEED_INTERVAL_MS = 1000;
+const APP_REFRESH_MS = 2000;
 
 const iconPool: IconName[] = [
-  'public',
-  'chat-bubble',
-  'play-circle-filled',
-  'cloud',
-  'map',
-  'shopping-cart',
-  'photo',
-  'music-note',
-  'mail',
-  'work',
-  'school',
-  'smartphone',
+  "public",
+  "chat-bubble",
+  "play-circle-filled",
+  "cloud",
+  "map",
+  "shopping-cart",
+  "photo",
+  "music-note",
+  "mail",
+  "work",
+  "school",
+  "smartphone",
 ];
 
 const colorPool = [
-  '#F2B261',
-  '#6CD4CF',
-  '#8CA6F5',
-  '#73D29B',
-  '#F07D8C',
-  '#C7A6F9',
-  '#70C6F4',
-  '#9CCB64',
+  "#F2B261",
+  "#6CD4CF",
+  "#8CA6F5",
+  "#73D29B",
+  "#F07D8C",
+  "#C7A6F9",
+  "#70C6F4",
+  "#9CCB64",
 ];
 
 const formatLabel = (appName: string | undefined, packageName: string) => {
@@ -66,16 +73,17 @@ const formatLabel = (appName: string | undefined, packageName: string) => {
   if (normalizedAppName) {
     return normalizedAppName;
   }
-  const last = packageName.split('.').pop() ?? packageName;
+  const last = packageName.split(".").pop() ?? packageName;
   return last
-    .replace(/[-_]/g, ' ')
+    .replace(/[-_]/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
 const pickIcon = (packageName: string): IconName =>
   iconPool[Math.abs(hashCode(packageName)) % iconPool.length];
 
-const pickColor = (packageName: string) => colorPool[Math.abs(hashCode(packageName)) % colorPool.length];
+const pickColor = (packageName: string) =>
+  colorPool[Math.abs(hashCode(packageName)) % colorPool.length];
 
 const hashCode = (value: string) => {
   let hash = 0;
@@ -109,10 +117,16 @@ const simulateSpeed = () => ({
 
 export function useNetworkMonitor() {
   const [hasAccess, setHasAccess] = useState(false);
-  const [speed, setSpeed] = useState<MonitorSpeed>({ down: 0, up: 0, isLive: false });
+  const [speed, setSpeed] = useState<MonitorSpeed>({
+    down: 0,
+    up: 0,
+    isLive: false,
+  });
   const [apps, setApps] = useState<MonitorAppRow[]>([]);
-  const lastTotals = useRef<{ rx: number; tx: number; time: number } | null>(null);
-  const isAndroid = Platform.OS === 'android';
+  const lastTotals = useRef<{ rx: number; tx: number; time: number } | null>(
+    null,
+  );
+  const isAndroid = Platform.OS === "android";
   const moduleAvailable = isModuleAvailable();
 
   const refreshAccess = useCallback(() => {
@@ -129,8 +143,8 @@ export function useNetworkMonitor() {
       return;
     }
 
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
         refreshAccess();
       }
     });
@@ -149,7 +163,10 @@ export function useNetworkMonitor() {
     }
 
     if (!moduleAvailable) {
-      const interval = setInterval(() => setSpeed({ ...simulateSpeed(), isLive: false }), 1800);
+      const interval = setInterval(
+        () => setSpeed({ ...simulateSpeed(), isLive: false }),
+        1800,
+      );
       return () => clearInterval(interval);
     }
 
@@ -157,7 +174,11 @@ export function useNetworkMonitor() {
       const totals = getTrafficTotals();
       const now = Date.now();
       if (!lastTotals.current) {
-        lastTotals.current = { rx: totals.rxBytes, tx: totals.txBytes, time: now };
+        lastTotals.current = {
+          rx: totals.rxBytes,
+          tx: totals.txBytes,
+          time: now,
+        };
         return;
       }
 
@@ -165,10 +186,17 @@ export function useNetworkMonitor() {
       if (deltaTime <= 0) {
         return;
       }
-      const down = bytesToMbps(totals.rxBytes - lastTotals.current.rx, deltaTime);
+      const down = bytesToMbps(
+        totals.rxBytes - lastTotals.current.rx,
+        deltaTime,
+      );
       const up = bytesToMbps(totals.txBytes - lastTotals.current.tx, deltaTime);
 
-      lastTotals.current = { rx: totals.rxBytes, tx: totals.txBytes, time: now };
+      lastTotals.current = {
+        rx: totals.rxBytes,
+        tx: totals.txBytes,
+        time: now,
+      };
       setSpeed({
         down: Number(down.toFixed(1)),
         up: Number(up.toFixed(1)),
@@ -191,7 +219,7 @@ export function useNetworkMonitor() {
       try {
         const end = Date.now();
         const start = end - APP_WINDOW_MS;
-        const data = await queryAppUsage(start, end, 'all');
+        const data = await queryAppUsage(start, end, "all");
         if (!mounted) {
           return;
         }
@@ -219,7 +247,7 @@ export function useNetworkMonitor() {
       windowMinutes: APP_WINDOW_MS / 60000,
       isLiveModule: moduleAvailable && isAndroid,
     }),
-    [apps, hasAccess, isAndroid, moduleAvailable, speed]
+    [apps, hasAccess, isAndroid, moduleAvailable, speed],
   );
 }
 
